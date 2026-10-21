@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% set active_nav = 'help' %}
+{% block title %}Help & Documentation{% endblock %}
+{% block page_title %}Help & Documentation{% endblock %}
+{% block breadcrumb %}System / Help{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+  <div class="card" style="margin-bottom: 1.25rem;">
+    <div class="card-title">Quick start</div>
+    <ol style="padding-left: 1.2rem; color: var(--text-secondary); font-size: 0.92rem; line-height: 1.8;">
+      <li><a href="{{ url_for('plants.create_plant') }}">Add a plant</a> — name, species and a photo.</li>
+      <li><a href="{{ url_for('analysis.analyze_form') }}">Run a Leaf Analysis</a> — upload a clear, close photo of a leaf against a plain background.</li>
+      <li>Review the Visual Health Score, metrics, and Health Map on the results page.</li>
+      <li>Optionally <a href="{{ url_for('growth.growth_home') }}">start a Growth Scan</a> with a short time-lapse video.</li>
+      <li>Track changes in <a href="{{ url_for('timeline.timeline_view') }}">Health Timeline</a> and <a href="{{ url_for('compare.compare_view') }}">Compare Analyses</a>.</li>
+      <li>Generate a PDF from any analysis result page, and find it later in <a href="{{ url_for('reports.reports_view') }}">Reports</a>.</li>
+    </ol>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.25rem;">
+    <div class="card-title">About the measurements</div>
+    <p class="text-sm">Leaf Coverage, Yellowing, Visible Damage and Dark Spots are computed directly from the uploaded
+      image using computer vision (OpenCV color segmentation) — they are real measurements of that specific photo,
+      not estimates or lookups.</p>
+    <p class="text-sm">The Visual Health Score is a transparent weighted combination of those measurements (see
+      "How is this calculated?" on any result page). It is a visual screening tool, not a certified agricultural
+      or scientific diagnosis.</p>
+    <p class="text-sm">Gemini Vision analyzes uploaded plant images when the provider is configured. Its visual estimates are uncertain screening guidance, not a confirmed diagnosis.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tips for better results</div>
+    <ul style="padding-left: 1.2rem; color: var(--text-secondary); font-size: 0.92rem; line-height: 1.8;">
+      <li>Fill the frame with the leaf; avoid busy backgrounds.</li>
+      <li>Use even, natural lighting — avoid harsh shadows or direct glare.</li>
+      <li>For Growth Studio, keep the camera angle and distance consistent between recordings.</li>
+      <li>Re-analyze the same plant every few days for the most useful trend insights.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

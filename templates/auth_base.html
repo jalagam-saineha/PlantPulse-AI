@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><text y=%2220%22 font-size=%2220%22>🌿</text></svg>">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-visual">
+    <img
+      class="auth-visual-image"
+      src="{{ url_for('static', filename='images/plant image.jpg') }}"
+      alt=""
+      aria-hidden="true"
+    >
+    <div class="auth-visual-brand">
+      <div class="sidebar-brand-mark">{{ icon('leaf', 18) }}</div>
+      <strong>PlantPulse AI</strong>
+    </div>
+    <div>
+      <h2>See the change.<br>Understand the plant.</h2>
+      <p>Computer vision and visual growth tracking, in one workspace built to read what a leaf is telling you.</p>
+    </div>
+    <p class="text-sm" style="color: rgba(255,255,255,0.5);">Visual screening only — not a certified agricultural diagnosis.</p>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-card">
+      {% include "_flash.html" %}
+      {% block auth_content %}{% endblock %}
+    </div>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

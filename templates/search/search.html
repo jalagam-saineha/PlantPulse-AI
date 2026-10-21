@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block page_title %}Search{% endblock %}
+{% block breadcrumb %}Search results{% endblock %}
+
+{% block content %}
+  <form action="{{ url_for('search.search_view') }}" method="get" class="topbar-search" style="width: 360px; margin-bottom: 1.5rem;">
+    {{ icon('search', 15) }}
+    <input type="search" name="q" value="{{ q }}" placeholder="Search plants, analyses, reports…" autofocus>
+  </form>
+
+  {% if not q %}
+    <div class="card empty-state">
+      <div class="empty-icon">{{ icon('search', 26) }}</div>
+      <h3>Search your workspace</h3>
+      <p>Find plants, analyses, reports and timeline entries by name.</p>
+    </div>
+  {% elif total == 0 %}
+    <div class="card empty-state">
+      <div class="empty-icon">{{ icon('search', 26) }}</div>
+      <h3>No results for "{{ q }}"</h3>
+      <p>Try a different plant name or species.</p>
+    </div>
+  {% else %}
+    {% if results.plants %}
+      <div class="card" style="margin-bottom: 1.25rem;">
+        <div class="card-title">Plants</div>
+        {% for p in results.plants %}
+          <a href="{{ url_for('plants.view_plant', plant_id=p.id) }}" class="row" style="justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--surface-border); color: var(--text-primary);">
+            <span>{{ p.name }}</span><span class="text-sm text-muted">{{ p.species or '' }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if results.analyses %}
+      <div class="card" style="margin-bottom: 1.25rem;">
+        <div class="card-title">Analyses</div>
+        {% for a in results.analyses %}
+          <a href="{{ url_for('analysis.result', analysis_id=a.id) }}" class="row" style="justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--surface-border); color: var(--text-primary);">
+            <span>{{ a.plant.name }} — {{ a.created_at.strftime('%b %d, %Y') }}</span>
+            <span class="text-sm text-muted">{{ 'Score: ' ~ (a.health_score|round|int if a.health_score is not none else '—') }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if results.reports %}
+      <div class="card" style="margin-bottom: 1.25rem;">
+        <div class="card-title">Reports</div>
+        {% for r in results.reports %}
+          <a href="{{ url_for('reports.view_report', report_id=r.id) }}" class="row" style="justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--surface-border); color: var(--text-primary);">
+            <span>{{ r.title }}</span><span class="text-sm text-muted">{{ r.created_at.strftime('%b %d, %Y') }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if results.timeline %}
+      <div class="card">
+        <div class="card-title">Timeline Entries</div>
+        {% for e in results.timeline %}
+          <div class="row" style="justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--surface-border);">
+            <span>{{ e.event_date.strftime('%b %d, %Y') }}</span>
+            <span class="text-sm text-muted">Health: {{ e.health_score|round|int if e.health_score is not none else '—' }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endif %}
+{% endblock %}

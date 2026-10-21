@@ -1,0 +1,15 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-stack" style="margin-bottom: 1.25rem;">
+      {% for category, message in messages %}
+        {% set cls = 'alert-error' if category == 'error' else ('alert-success' if category == 'success' else 'alert-info') %}
+        <div class="alert {{ cls }}" data-flash>
+          {% if category == 'error' %}{{ icon('alert-triangle', 16) }}
+          {% elif category == 'success' %}{{ icon('check-circle', 16) }}
+          {% else %}{{ icon('help-circle', 16) }}{% endif %}
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

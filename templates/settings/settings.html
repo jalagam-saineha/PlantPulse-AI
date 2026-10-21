@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% set active_nav = 'settings' %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block breadcrumb %}System / Settings{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-title">Profile</div>
+    <form method="POST" action="{{ url_for('settings.update_profile') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="name">Full name</label>
+        <input type="text" id="name" name="name" value="{{ current_user.name }}" required>
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" value="{{ current_user.email }}" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Save Profile</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-title">Password</div>
+    <form method="POST" action="{{ url_for('settings.update_password') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="current_password">Current password</label>
+        <input type="password" id="current_password" name="current_password" required autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label for="new_password">New password</label>
+        <input type="password" id="new_password" name="new_password" required autocomplete="new-password">
+        <div class="hint">At least 8 characters.</div>
+      </div>
+      <div class="field">
+        <label for="confirm_password">Confirm new password</label>
+        <input type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn btn-primary">Update Password</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-title">Appearance</div>
+    <div class="row" style="justify-content: space-between;">
+      <div>
+        <strong>Dark mode</strong>
+        <p class="text-sm text-muted mt-0">Switches the whole interface. Your preference is saved automatically.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" data-theme-toggle>Toggle Theme</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-title">Notifications</div>
+    <form method="POST" action="{{ url_for('settings.update_notifications') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="checkbox-row" style="margin-bottom: 1rem;">
+        <input type="checkbox" name="notifications_enabled" style="width:auto;" {{ 'checked' if current_user.notifications_enabled else '' }}>
+        Notify me when analyses and growth scans complete
+      </label>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-title">AI Assessment</div>
+    <p class="text-sm text-muted">Gemini Vision and the Care Assistant read provider settings from the project-root <code>.env</code> file. API keys stay server-side and are never shown here.</p>
+    <p class="text-sm text-muted">The legacy fixed-class disease classifier is inactive and is not used for new analyses.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">System Information</div>
+    <div class="grid grid-cols-2" style="gap: 0.6rem;">
+      <div class="text-sm"><span class="text-muted">Python</span><br>{{ status.python_version }}</div>
+      <div class="text-sm"><span class="text-muted">Platform</span><br>{{ status.platform }}</div>
+      <div class="text-sm"><span class="text-muted">Database</span><br>{{ status.database.state }}</div>
+      <div class="text-sm"><span class="text-muted">Computer Vision</span><br>{{ status.computer_vision.detail }}</div>
+      <div class="text-sm"><span class="text-muted">TensorFlow</span><br>{{ status.tensorflow.detail }}</div>
+      <div class="text-sm"><span class="text-muted">Storage</span><br>{{ status.storage.detail }}</div>
+    </div>
+    <a href="{{ url_for('system.system_status_view') }}" class="btn btn-secondary btn-sm" style="margin-top: 1rem;">View Full System Status</a>
+  </div>
+
+</div>
+{% endblock %}

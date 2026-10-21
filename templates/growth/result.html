@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% set active_nav = 'growth-studio' %}
+{% block title %}Growth Scan{% endblock %}
+{% block page_title %}Growth Scan{% endblock %}
+{% block breadcrumb %}Workspace / Growth Studio / {{ video.plant.name }}{% endblock %}
+
+{% block content %}
+  <div class="row" style="justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 style="margin-bottom: 0.1rem;">{{ video.plant.name }}</h2>
+      <p class="text-sm text-muted mt-0">Started {{ video.created_at.strftime('%B %d, %Y at %H:%M') }} · sampling every {{ video.sampling_interval_seconds }}s</p>
+    </div>
+    <a href="{{ url_for('growth.growth_home', plant_id=video.plant_id) }}" class="btn btn-secondary">New Growth Scan</a>
+  </div>
+
+  <div class="card" id="status-card" style="margin-bottom: 1.5rem;" data-video-id="{{ video.id }}" data-status="{{ video.status }}">
+    <div class="row" style="justify-content: space-between; margin-bottom: 0.6rem;">
+      <strong id="status-label">
+        {% if video.status == 'COMPLETED' %}Completed
+        {% elif video.status == 'FAILED' %}Processing failed
+        {% else %}{{ video.status|title }}{% endif %}
+      </strong>
+      <span class="badge {{ 'badge-good' if video.status == 'COMPLETED' else ('badge-danger' if video.status == 'FAILED' else 'badge-warning') }}" id="status-badge">{{ video.status }}</span>
+    </div>
+    <div style="height:8px; background:var(--bg-sunken); border-radius:99px; overflow:hidden;">
+      <div id="progress-bar" style="height:100%; width:{{ video.progress_percent }}%; background:var(--accent); transition: width 400ms;"></div>
+    </div>
+    <p class="text-sm text-muted" id="status-detail" style="margin-top:0.6rem; margin-bottom:0;">
+      {% if video.status == 'FAILED' %}{{ video.error_message }}
+      {% elif video.status == 'COMPLETED' %}{{ frames|length }} frame(s) analyzed.
+      {% else %}Reading video and extracting frames for analysis…{% endif %}
+    </p>
+  </div>
+
+  {% if video.status == 'COMPLETED' and frames %}
+    <div class="grid grid-cols-2" style="margin-bottom: 1.5rem;">
+      <div class="card"><div class="card-title">Health Score vs Time</div><canvas id="chart-health"></canvas><p id="chart-health-unavailable" class="text-sm text-muted" hidden></p></div>
+      <div class="card"><div class="card-title">Leaf Area vs Time</div><canvas id="chart-area"></canvas><p id="chart-area-unavailable" class="text-sm text-muted" hidden></p></div>
+      <div class="card"><div class="card-title">Green Coverage vs Time</div><canvas id="chart-green"></canvas><p id="chart-green-unavailable" class="text-sm text-muted" hidden></p></div>
+      <div class="card"><div class="card-title">Damage vs Time</div><canvas id="chart-damage"></canvas><p id="chart-damage-unavailable" class="text-sm text-muted" hidden></p></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Frame Timeline</div>
+      <div style="display:flex; gap:0.75rem; overflow-x:auto; padding-bottom: 0.5rem;">
+        {% for f in frames %}
+          <div style="flex: 0 0 auto; width: 120px; text-align:center;">
+            <img src="{{ url_for('main.media', category='frames', filename=f.frame_path) }}" style="width:120px; height:90px; object-fit:cover; border-radius: var(--radius-sm);" alt="Frame at {{ f.timestamp_seconds }}s">
+            <p class="text-sm mono mt-0" style="margin-top:0.3rem;">{{ f.timestamp_seconds }}s</p>
+            <p class="text-sm text-muted mt-0">Health: {{ f.health_score|round|int if f.health_score is not none else '—' }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% elif video.status == 'COMPLETED' and not frames %}
+    <div class="card empty-state">
+      <div class="empty-icon">{{ icon('alert-triangle', 24) }}</div>
+      <h3>No foliage detected in any sampled frame</h3>
+      <p>Try a video with the plant more clearly in frame.</p>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var card = document.getElementById('status-card');
+  var status = card.getAttribute('data-status');
+  var videoId = card.getAttribute('data-video-id');
+
+  function poll() {
+    fetch('/growth/' + videoId + '/status.json')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        document.getElementById('progress-bar').style.width = data.progress_percent + '%';
+        document.getElementById('status-badge').textContent = data.status;
+        if (data.status === 'COMPLETED' || data.status === 'FAILED') {
+          window.location.reload();
+        } else {
+          setTimeout(poll, 2000);
+        }
+      })
+      .catch(function () { setTimeout(poll, 3000); });
+  }
+
+  if (status === 'QUEUED' || status === 'PROCESSING') {
+    setTimeout(poll, 2000);
+  }
+
+  {% if video.status == 'COMPLETED' and frames %}
+  var timestamps = {{ chart_data.labels|tojson }};
+  function showUnavailable(id, message) {
+    var canvas = document.getElementById(id);
+    canvas.hidden = true;
+    var note = document.getElementById(id + '-unavailable');
+    note.textContent = message;
+    note.hidden = false;
+  }
+
+  // Draw a small dependency-free line chart if the optional CDN script is
+  // unavailable (for example, when the app is used offline).
+  function drawFallback(canvas, points, color, label) {
+    var width = Math.max(canvas.clientWidth || 0, 280);
+    var height = 220;
+    var ratio = window.devicePixelRatio || 1;
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    canvas.style.width = '100%';
+    canvas.style.height = height + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(ratio, ratio);
+    var pad = { left: 46, right: 14, top: 18, bottom: 38 };
+    var plotW = width - pad.left - pad.right;
+    var plotH = height - pad.top - pad.bottom;
+    var xs = points.map(function (p) { return p.x; });
+    var ys = points.map(function (p) { return p.y; });
+    var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+    var minY = Math.min(0, Math.min.apply(null, ys)), maxY = Math.max.apply(null, ys);
+    if (maxX === minX) maxX = minX + 1;
+    if (maxY === minY) maxY = minY + 1;
+    ctx.font = '11px sans-serif';
+    ctx.strokeStyle = 'rgba(120, 130, 125, 0.22)';
+    ctx.fillStyle = '#68736d';
+    ctx.lineWidth = 1;
+    for (var tick = 0; tick <= 4; tick++) {
+      var y = pad.top + plotH * tick / 4;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(width - pad.right, y); ctx.stroke();
+      ctx.fillText(String(Math.round(maxY - (maxY - minY) * tick / 4)), 4, y + 4);
+    }
+    ctx.beginPath();
+    points.forEach(function (point, index) {
+      var x = pad.left + (point.x - minX) / (maxX - minX) * plotW;
+      var y = pad.top + (maxY - point.y) / (maxY - minY) * plotH;
+      if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    points.forEach(function (point) {
+      var x = pad.left + (point.x - minX) / (maxX - minX) * plotW;
+      var y = pad.top + (maxY - point.y) / (maxY - minY) * plotH;
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+    });
+    ctx.fillStyle = color;
+    ctx.fillText(label, pad.left, height - 8);
+    ctx.fillStyle = '#68736d';
+    ctx.fillText('Seconds: ' + minX + '–' + (maxX === minX + 1 && points.length === 1 ? minX : maxX), pad.left + 100, height - 8);
+  }
+
+  function mkChart(id, values, color, label) {
+    if (!Array.isArray(timestamps) || !Array.isArray(values)) {
+      showUnavailable(id, 'No valid data is available for this measurement.');
+      return;
+    }
+
+    var points = timestamps.map(function (timestamp, index) {
+      var x = timestamp;
+      var y = values[index];
+      return typeof x === 'number' && Number.isFinite(x) &&
+        typeof y === 'number' && Number.isFinite(y) ? { x: x, y: y } : null;
+    }).filter(function (point) { return point !== null; });
+
+    if (!points.length) {
+      showUnavailable(id, 'No valid data is available for this measurement.');
+      return;
+    }
+
+    var canvas = document.getElementById(id);
+    canvas.hidden = false;
+    if (typeof Chart === 'undefined') {
+      drawFallback(canvas, points, color, label);
+      return;
+    }
+    var config = {
+      type: 'line',
+      data: { datasets: [{
+        label: label,
+        data: points,
+        borderColor: color,
+        backgroundColor: color,
+        tension: 0.3,
+        pointRadius: 3
+      }] },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'Seconds' } }
+        }
+      }
+    };
+    var chart = Chart.getChart(canvas);
+    if (chart) {
+      chart.data = config.data;
+      chart.options = config.options;
+      chart.update();
+    } else {
+      new Chart(canvas, config);
+    }
+  }
+
+  mkChart('chart-health', {{ chart_data.health_score|tojson }}, '#2f6d4f', 'Health Score');
+  mkChart('chart-area', {{ chart_data.leaf_area|tojson }}, '#6a53a8', 'Leaf Area (px)');
+  mkChart('chart-green', {{ chart_data.green_coverage|tojson }}, '#3f8a63', 'Green Coverage (%)');
+  mkChart('chart-damage', {{ chart_data.damage|tojson }}, '#a54a3f', 'Damage (%)');
+  {% endif %}
+})();
+</script>
+{% endblock %}

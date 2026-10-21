@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% set active_nav = 'system-status' %}
+{% block title %}System Status{% endblock %}
+{% block page_title %}System Status{% endblock %}
+{% block breadcrumb %}System / System Status{% endblock %}
+
+{% macro status_badge(state) -%}
+  {% if state == 'READY' %}<span class="badge badge-good"><span class="badge-dot"></span>READY</span>
+  {% elif state == 'WARNING' %}<span class="badge badge-warning"><span class="badge-dot"></span>WARNING</span>
+  {% elif state == 'ERROR' %}<span class="badge badge-danger"><span class="badge-dot"></span>ERROR</span>
+  {% else %}<span class="badge badge-neutral"><span class="badge-dot"></span>NOT INSTALLED</span>{% endif %}
+{%- endmacro %}
+
+{% block content %}
+  <p class="text-muted" style="margin-bottom: 1.25rem;">Live runtime checks performed on this request — not hardcoded status.</p>
+
+  <div class="grid grid-cols-2">
+    {% for key, label in [('database','Database'), ('computer_vision','Computer Vision'), ('tensorflow','TensorFlow'), ('video_processor','Video Processor'), ('report_generator','Report Generator'), ('storage','Storage')] %}
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <strong>{{ label }}</strong>
+          {{ status_badge(status[key].state) }}
+        </div>
+        <p class="text-sm text-muted" style="margin-top: 0.4rem; margin-bottom:0;">{{ status[key].detail }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="card" style="margin-top: 1.5rem;">
+    <div class="card-title">Environment</div>
+    <p class="text-sm">Python {{ status.python_version }} — {{ status.platform }}</p>
+  </div>
+{% endblock %}

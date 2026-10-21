@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% set active_nav = 'growth-studio' %}
+{% block title %}Growth Studio{% endblock %}
+{% block page_title %}Growth Studio{% endblock %}
+{% block breadcrumb %}Workspace / Growth Studio{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+  <div style="text-align:center; margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.8rem;">See growth, not just snapshots.</h1>
+    <p>Upload a short time-lapse video and PlantPulse will extract frames and measure how your plant changes.</p>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <form method="POST" enctype="multipart/form-data" id="growth-form" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field">
+        <label for="plant_id">Plant</label>
+        <select id="plant_id" name="plant_id" required>
+          <option value="">Select a plant…</option>
+          {% for p in plants %}
+            <option value="{{ p.id }}" {{ 'selected' if p.id == selected_plant_id else '' }}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="video">Growth video</label>
+        <input type="file" id="video" name="video" accept=".mp4,.mov,.avi,.webm" required>
+        <div class="hint">MP4, MOV, AVI or WEBM — up to 150 MB.</div>
+      </div>
+
+      <div class="field">
+        <label for="interval">Frame sampling</label>
+        <select id="interval" name="interval">
+          <option value="1">Every 1 second</option>
+          <option value="5" selected>Every 5 seconds</option>
+          <option value="10">Every 10 seconds</option>
+          <option value="auto">Automatic (based on video length)</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Start Growth Scan</button>
+      <p class="text-sm text-muted" style="text-align:center; margin-top:0.75rem;">
+        Processing runs in the background — you'll see live progress on the next page.
+      </p>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Recent Growth Scans</div>
+    {% if scans %}
+      <div class="stack gap-sm">
+        {% for s in scans %}
+          <a href="{{ url_for('growth.growth_result', video_id=s.id) }}" class="row" style="justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid var(--surface-border); color: var(--text-primary);">
+            <span>{{ s.plant.name }} — {{ s.created_at.strftime('%b %d, %Y %H:%M') }}</span>
+            <span class="badge {{ 'badge-good' if s.status == 'COMPLETED' else ('badge-danger' if s.status == 'FAILED' else 'badge-warning') }}">{{ s.status }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">{{ icon('film', 26) }}</div>
+        <h3>No growth scans yet</h3>
+        <p>Upload your first time-lapse video to see growth charts here.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('growth-form').addEventListener('submit', function () {
+  var btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Uploading and queuing…';
+});
+</script>
+{% endblock %}

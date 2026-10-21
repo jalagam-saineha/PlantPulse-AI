@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% set active_nav = 'dashboard' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}Workspace / Dashboard{% endblock %}
+
+{% block content %}
+  <div class="card" style="background: linear-gradient(135deg, var(--forest-900), var(--forest-700)); border: none; color: #fff; margin-bottom: 1.5rem;">
+    <h2 style="color: #fff; font-size: 1.6rem; max-width: 30ch;">Understand your plants. Before they tell you something is wrong.</h2>
+    <p style="color: rgba(255,255,255,0.78); max-width: 52ch;">PlantPulse combines computer vision, AI screening and growth tracking to help you understand plant health over time.</p>
+    <div class="row gap-md" style="margin-top: 0.5rem; flex-wrap: wrap;">
+      <a href="{{ url_for('analysis.analyze_form') }}" class="btn btn-secondary">Analyze a Leaf</a>
+      <a href="{{ url_for('growth.growth_home') }}" class="btn btn-ghost" style="color: #fff; border: 1px solid rgba(255,255,255,0.35);">Start Growth Scan</a>
+      <a href="{{ url_for('plants.create_plant') }}" class="btn btn-ghost" style="color: #fff; border: 1px solid rgba(255,255,255,0.35);">{{ icon('plus', 15) }} Add Plant</a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-4" style="margin-bottom: 1.5rem;">
+    <div class="card">
+      <div class="text-sm text-muted mt-0">Total Plants</div>
+      <div style="font-size: 1.7rem; font-family: var(--font-display); font-weight: 600;">{{ plant_count }}</div>
+    </div>
+    <div class="card">
+      <div class="text-sm text-muted mt-0">Analyses Completed</div>
+      <div style="font-size: 1.7rem; font-family: var(--font-display); font-weight: 600;">{{ analyses_completed }}</div>
+    </div>
+    <div class="card">
+      <div class="text-sm text-muted mt-0">Average Health Score</div>
+      <div style="font-size: 1.7rem; font-family: var(--font-display); font-weight: 600;">{{ avg_health if avg_health is not none else '—' }}</div>
+    </div>
+    <div class="card">
+      <div class="text-sm text-muted mt-0">Growth Scans</div>
+      <div style="font-size: 1.7rem; font-family: var(--font-display); font-weight: 600;">{{ growth_scans }}</div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <div class="card">
+      <div class="card-title">Recent Plants</div>
+      {% if recent_plants %}
+        <div class="stack gap-sm">
+          {% for p in recent_plants %}
+            <a href="{{ url_for('plants.view_plant', plant_id=p.id) }}" class="row" style="justify-content: space-between; padding: 0.65rem 0; border-bottom: 1px solid var(--surface-border); color: var(--text-primary);">
+              <span class="row gap-sm">
+                <span style="width:32px; height:32px; border-radius:8px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; color:var(--accent);">{{ icon('sprout', 16) }}</span>
+                <span>
+                  <strong style="display:block; font-size:0.9rem;">{{ p.name }}</strong>
+                  <span class="text-sm text-muted">{{ p.species or 'Species not set' }}</span>
+                </span>
+              </span>
+              <span class="text-muted text-sm">{{ p.created_at.strftime('%b %d') }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">{{ icon('sprout', 26) }}</div>
+          <h3>No plants yet</h3>
+          <p>Add your first plant to begin tracking growth.</p>
+          <a href="{{ url_for('plants.create_plant') }}" class="btn btn-primary" style="margin-top: 0.75rem;">Add Plant</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Active Alerts</div>
+      {% if active_alerts %}
+        <p><a href="{{ url_for('notifications.notifications_view') }}">{{ active_alerts }} unread notification(s)</a></p>
+      {% else %}
+        <div class="empty-state" style="padding: 1.5rem 1rem;">
+          <div class="empty-icon">{{ icon('bell', 22) }}</div>
+          <h3 style="font-size: 1rem;">All clear</h3>
+          <a href="{{ url_for('notifications.notifications_view') }}" class="text-sm">View notifications</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1.5rem;">
+    <div class="card-title">Recent Analyses</div>
+    {% if recent_analyses %}
+      <div class="stack gap-sm">
+        {% for a in recent_analyses %}
+          <div class="row" style="justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--surface-border);">
+            <span class="text-sm">{{ a.plant.name }} — {{ a.created_at.strftime('%b %d, %Y') }}</span>
+            <span class="badge badge-good">{{ a.health_score|round|int if a.health_score is not none else '—' }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">{{ icon('leaf', 26) }}</div>
+        <h3>No analyses yet</h3>
+        <p>Run your first Leaf Analysis to see computer-vision health scoring here.</p>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

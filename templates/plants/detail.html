@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% set active_nav = 'plants' %}
+{% block title %}{{ plant.name }}{% endblock %}
+{% block page_title %}{{ plant.name }}{% endblock %}
+{% block breadcrumb %}Plant Management / My Plants / {{ plant.name }}{% endblock %}
+
+{% block content %}
+  <div class="grid" style="grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start;">
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div style="height: 200px; background: var(--accent-soft); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        {% if plant.image_path %}
+          <img src="{{ url_for('main.media', category='plants', filename=plant.image_path) }}" alt="{{ plant.name }}" style="width:100%; height:100%; object-fit:cover;">
+        {% else %}
+          <span style="color: var(--accent); opacity: 0.6;">{{ icon('sprout', 40) }}</span>
+        {% endif %}
+      </div>
+      <div style="padding: 1.1rem 1.25rem;">
+        <h2 style="margin-bottom: 0.2rem;">{{ plant.name }}</h2>
+        <p class="text-sm text-muted mt-0">{{ plant.species or 'Species not set' }}{% if plant.variety %} · {{ plant.variety }}{% endif %}</p>
+        {% if age_days is not none %}<p class="text-sm">{{ age_days }} days since planting</p>{% endif %}
+        {% if plant.location %}<p class="text-sm">📍 {{ plant.location }}</p>{% endif %}
+        {% if plant.notes %}<p class="text-sm">{{ plant.notes }}</p>{% endif %}
+        {% if plant.is_archived %}<span class="badge badge-warning" style="margin-bottom: 0.75rem;">Archived</span>{% endif %}
+
+        <div class="stack gap-sm" style="margin-top: 1rem;">
+          <a href="{{ url_for('analysis.analyze_form', plant_id=plant.id) }}" class="btn btn-secondary btn-block">Analyze Leaf</a>
+          <a href="{{ url_for('growth.growth_home', plant_id=plant.id) }}" class="btn btn-secondary btn-block">Start Growth Scan</a>
+          {% if plant.latest_analysis %}
+          <form method="POST" action="{{ url_for('reports.generate', analysis_id=plant.latest_analysis.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost btn-block">Generate Report (latest analysis)</button>
+          </form>
+          {% endif %}
+          <a href="{{ url_for('compare.compare_view', plant_id=plant.id) }}" class="btn btn-ghost btn-block">Compare Analyses</a>
+          <a href="{{ url_for('plants.edit_plant', plant_id=plant.id) }}" class="btn btn-ghost btn-block">Edit Profile</a>
+          <form method="POST" action="{{ url_for('plants.archive_plant', plant_id=plant.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost btn-block">{{ 'Restore' if plant.is_archived else 'Archive' }}</button>
+          </form>
+          <form method="POST" action="{{ url_for('plants.delete_plant', plant_id=plant.id) }}" onsubmit="return confirm('Delete {{ plant.name }} and all of its analyses? This cannot be undone.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-block">Delete Plant</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="stack gap-md">
+      <div class="grid grid-cols-3">
+        <div class="card">
+          <div class="card-title">Current Health</div>
+          {% if plant.latest_analysis and plant.latest_analysis.health_score is not none %}
+            <div style="font-size: 1.8rem; font-family: var(--font-display); font-weight: 600;">{{ plant.latest_analysis.health_score|round|int }}<span class="text-muted" style="font-size: 1rem;">/100</span></div>
+          {% else %}
+            <p class="text-sm text-muted mt-0">No analysis yet</p>
+          {% endif %}
+        </div>
+        <div class="card">
+          <div class="card-title">Analyses</div>
+          <div style="font-size: 1.8rem; font-family: var(--font-display); font-weight: 600;">{{ analysis_count }}</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Growth Scans</div>
+          <div style="font-size: 1.8rem; font-family: var(--font-display); font-weight: 600;">{{ scan_count }}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Recent Analyses</div>
+        {% if analyses %}
+          <div class="stack gap-sm">
+            {% for a in analyses %}
+              <div class="row" style="justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--surface-border);">
+                <span class="text-sm">{{ a.created_at.strftime('%b %d, %Y') }}</span>
+                <span class="badge badge-good">{{ a.health_score|round|int if a.health_score is not none else '—' }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state" style="padding: 2rem 1rem;">
+            <div class="empty-icon">{{ icon('leaf', 22) }}</div>
+            <h3 style="font-size: 1rem;">No analyses yet</h3>
+            <p class="text-sm">Run a Leaf Analysis above and it will appear here automatically.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <div class="card-title">Growth Activity</div>
+        {% if video_scans %}
+          <div class="stack gap-sm">
+            {% for s in video_scans %}
+              <div class="row" style="justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--surface-border);">
+                <span class="text-sm">{{ s.created_at.strftime('%b %d, %Y') }}</span>
+                <span class="badge badge-neutral">{{ s.status }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state" style="padding: 2rem 1rem;">
+            <div class="empty-icon">{{ icon('film', 22) }}</div>
+            <h3 style="font-size: 1rem;">No growth scans yet</h3>
+            <p class="text-sm">Start a growth scan above to see time-lapse metrics here.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

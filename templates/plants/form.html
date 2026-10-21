@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% set active_nav = 'add-plant' if not plant else 'plants' %}
+{% block title %}{{ 'Edit Plant' if plant else 'Add Plant' }}{% endblock %}
+{% block page_title %}{{ 'Edit Plant' if plant else 'Add Plant' }}{% endblock %}
+{% block breadcrumb %}Plant Management / {{ 'Edit Plant' if plant else 'Add Plant' }}{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+  <div class="card">
+    <form method="POST" enctype="multipart/form-data" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field">
+        <label for="name">Plant name *</label>
+        <input type="text" id="name" name="name" required
+               value="{{ (form.name if form else plant.name) or '' }}" autofocus>
+      </div>
+
+      <div class="grid grid-cols-2" style="gap: 1rem;">
+        <div class="field">
+          <label for="species">Species</label>
+          <input type="text" id="species" name="species" placeholder="e.g. Tomato"
+                 value="{{ (form.species if form else plant.species) or '' }}">
+        </div>
+        <div class="field">
+          <label for="variety">Variety</label>
+          <input type="text" id="variety" name="variety" placeholder="e.g. Roma"
+                 value="{{ (form.variety if form else plant.variety) or '' }}">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2" style="gap: 1rem;">
+        <div class="field">
+          <label for="planting_date">Planting date</label>
+          <input type="date" id="planting_date" name="planting_date"
+                 value="{{ (form.planting_date if form else (plant.planting_date.isoformat() if plant and plant.planting_date else '')) or '' }}">
+        </div>
+        <div class="field">
+          <label for="location">Location</label>
+          <input type="text" id="location" name="location" placeholder="e.g. Balcony, Row 2"
+                 value="{{ (form.location if form else plant.location) or '' }}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="3">{{ (form.notes if form else plant.notes) or '' }}</textarea>
+      </div>
+
+      <div class="field">
+        <label for="image">Plant photo</label>
+        {% if plant and plant.image_path %}
+          <div class="row gap-sm" style="margin-bottom: 0.6rem;">
+            <img src="{{ url_for('main.media', category='plants', filename=plant.image_path) }}" style="width:56px; height:56px; object-fit:cover; border-radius: 10px;" alt="">
+            <span class="text-sm text-muted">Uploading a new photo will replace this one.</span>
+          </div>
+        {% endif %}
+        <input type="file" id="image" name="image" accept=".jpg,.jpeg,.png,.webp">
+        <div class="hint">JPG, PNG or WEBP, up to 20 MB.</div>
+      </div>
+
+      <div class="row gap-sm" style="margin-top: 1.5rem;">
+        <button type="submit" class="btn btn-primary">{{ 'Save changes' if plant else 'Add plant' }}</button>
+        <a href="{{ url_for('plants.view_plant', plant_id=plant.id) if plant else url_for('plants.list_plants') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

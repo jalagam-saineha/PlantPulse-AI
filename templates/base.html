@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %} — {{ app_name }}</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><text y=%2220%22 font-size=%2220%22>🌿</text></svg>">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar-backdrop" data-sidebar-backdrop></div>
+
+  <aside class="sidebar" aria-label="Primary navigation">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-mark">{{ icon('leaf', 18) }}</div>
+      <div class="sidebar-brand-text">
+        <strong>PlantPulse</strong>
+        <span>AI · GROWTH INTELLIGENCE</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">WORKSPACE</div>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'dashboard' else '' }}" href="{{ url_for('main.dashboard') }}">{{ icon('grid') }}<span>Dashboard</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'leaf-analysis' else '' }}" href="{{ url_for('analysis.analyze_form') }}">{{ icon('leaf') }}<span>Leaf Analysis</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'growth-studio' else '' }}" href="{{ url_for('growth.growth_home') }}">{{ icon('film') }}<span>Growth Studio</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'timeline' else '' }}" href="{{ url_for('timeline.timeline_view') }}">{{ icon('clock') }}<span>Health Timeline</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'history' else '' }}" href="{{ url_for('history.history_view') }}">{{ icon('history') }}<span>Analysis History</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'reports' else '' }}" href="{{ url_for('reports.reports_view') }}">{{ icon('file-text') }}<span>Reports</span></a>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">PLANT MANAGEMENT</div>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'plants' else '' }}" href="{{ url_for('plants.list_plants') }}">{{ icon('sprout') }}<span>My Plants</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'add-plant' else '' }}" href="{{ url_for('plants.create_plant') }}">{{ icon('plus') }}<span>Add Plant</span></a>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">INSIGHTS</div>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'disease-library' else '' }}" href="{{ url_for('disease.disease_library') }}">{{ icon('activity') }}<span>Disease Library</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'insights' else '' }}" href="{{ url_for('insights.insights_view') }}">{{ icon('bar-chart') }}<span>Health Insights</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'compare' else '' }}" href="{{ url_for('compare.compare_view') }}">{{ icon('columns') }}<span>Comparisons</span></a>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">SYSTEM</div>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'notifications' else '' }}" href="{{ url_for('notifications.notifications_view') }}">{{ icon('bell') }}<span>Notifications</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'settings' else '' }}" href="{{ url_for('settings.settings_view') }}">{{ icon('settings') }}<span>Settings</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'system-status' else '' }}" href="{{ url_for('system.system_status_view') }}">{{ icon('server') }}<span>System Status</span></a>
+        <a class="sidebar-link {{ 'is-active' if active_nav == 'help' else '' }}" href="{{ url_for('help.help_view') }}">{{ icon('help-circle') }}<span>Help</span></a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-status">
+        <span class="dot"></span>
+        <span class="label">Vision Engine Ready</span>
+      </div>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">{{ current_user.name[:1]|upper if current_user.is_authenticated else '?' }}</div>
+        <div class="sidebar-user-meta">
+          <strong>{{ current_user.name if current_user.is_authenticated else 'Guest' }}</strong>
+          <a href="{{ url_for('auth.logout') }}">Log out</a>
+        </div>
+      </div>
+    </div>
+
+    <button class="sidebar-collapse-btn" data-sidebar-collapse type="button" aria-label="Collapse sidebar">
+      {{ icon('chevron-left', 13) }}
+    </button>
+  </aside>
+
+  <div class="main-col">
+    <header class="topbar">
+      <div class="row gap-md">
+        <button class="mobile-menu-btn" data-mobile-menu-open type="button" aria-label="Open navigation">{{ icon('menu', 18) }}</button>
+        <div class="topbar-titles">
+          <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+          <div class="breadcrumb">{% block breadcrumb %}Workspace / Dashboard{% endblock %}</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <form class="topbar-search" action="{{ url_for('search.search_view') }}" method="get">
+          {{ icon('search', 15) }}
+          <input type="search" name="q" placeholder="Search plants, analyses, reports…" aria-label="Search">
+        </form>
+        <a class="icon-btn" href="{{ url_for('notifications.notifications_view') }}" aria-label="Notifications">{{ icon('bell', 17) }}</a>
+        <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode" aria-pressed="false">
+          {{ icon('sun', 17) }}
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+      {% include "_flash.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

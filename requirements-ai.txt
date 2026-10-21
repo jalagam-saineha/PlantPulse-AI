@@ -1,0 +1,7 @@
+# PlantPulse AI — optional AI disease-model requirements
+# The application works fully without this file installed; the AI
+# Disease Screening feature will simply show "Model not installed".
+#
+# Install with:  python -m pip install -r requirements-ai.txt
+
+tensorflow==2.16.1

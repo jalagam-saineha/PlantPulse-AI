@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% set active_nav = 'leaf-analysis' %}
+{% block title %}Analysis Result{% endblock %}
+{% block page_title %}Analysis Result{% endblock %}
+{% block breadcrumb %}Workspace / Leaf Analysis / {{ analysis.plant.name }}{% endblock %}
+
+{% block content %}
+  <div class="row" style="justify-content: space-between; align-items:flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h2 style="margin-bottom: 0.1rem;">{{ analysis.plant.name }}</h2>
+      <p class="text-sm text-muted mt-0">Analyzed {{ analysis.created_at.strftime('%B %d, %Y at %H:%M') }}</p>
+    </div>
+    <div class="row gap-sm">
+      <form method="POST" action="{{ url_for('reports.generate', analysis_id=analysis.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary">Generate Report</button>
+      </form>
+      <a href="{{ url_for('analysis.analyze_form', plant_id=analysis.plant_id) }}" class="btn btn-secondary">Run Another Analysis</a>
+      <a href="{{ url_for('plants.view_plant', plant_id=analysis.plant_id) }}" class="btn btn-ghost">Back to Plant</a>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns: 260px 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <div class="card" style="text-align:center;">
+      <div class="text-sm text-muted mt-0">Leaf-Based Visual Score</div>
+      <div style="font-size: 3rem; font-family: var(--font-display); font-weight: 600; line-height:1;">
+        {{ analysis.health_score|round|int if analysis.health_score is not none else '—' }}<span class="text-muted" style="font-size:1.1rem;">/100</span>
+      </div>
+      <span class="badge {{ 'badge-neutral' if analysis.health_score is none else ('badge-good' if analysis.health_score >= 70 else ('badge-warning' if analysis.health_score >= 50 else 'badge-danger')) }}" style="margin-top: 0.5rem;">
+        Leaf-only category: {{ score.label }}
+      </span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Score breakdown <span class="text-sm text-muted">(How is this calculated?)</span></div>
+      <div class="grid grid-cols-2" style="gap: 0.75rem;">
+        <div>
+          <div class="row" style="justify-content: space-between;"><span class="text-sm">Leaf vitality</span><span class="text-sm mono">{{ score.components.leaf_vitality if score.components.leaf_vitality is not none else '?' }}{% if score.components.leaf_vitality is not none %}%{% endif %}</span></div>
+          <div style="height:6px; background:var(--bg-sunken); border-radius:99px; overflow:hidden; margin-top:2px;"><div style="height:100%; width:{{ score.components.leaf_vitality }}%; background:var(--status-good);"></div></div>
+        </div>
+        <div>
+          <div class="row" style="justify-content: space-between;"><span class="text-sm">Color health</span><span class="text-sm mono">{{ score.components.color_health if score.components.color_health is not none else '?' }}{% if score.components.color_health is not none %}%{% endif %}</span></div>
+          <div style="height:6px; background:var(--bg-sunken); border-radius:99px; overflow:hidden; margin-top:2px;"><div style="height:100%; width:{{ score.components.color_health }}%; background:var(--status-warning);"></div></div>
+        </div>
+        <div>
+          <div class="row" style="justify-content: space-between;"><span class="text-sm">Damage condition</span><span class="text-sm mono">{{ score.components.damage_condition if score.components.damage_condition is not none else '?' }}{% if score.components.damage_condition is not none %}%{% endif %}</span></div>
+          <div style="height:6px; background:var(--bg-sunken); border-radius:99px; overflow:hidden; margin-top:2px;"><div style="height:100%; width:{{ score.components.damage_condition }}%; background:var(--status-danger);"></div></div>
+        </div>
+        <div>
+          <div class="row" style="justify-content: space-between;"><span class="text-sm">Spot condition</span><span class="text-sm mono">{{ score.components.spot_condition if score.components.spot_condition is not none else '?' }}{% if score.components.spot_condition is not none %}%{% endif %}</span></div>
+          <div style="height:6px; background:var(--bg-sunken); border-radius:99px; overflow:hidden; margin-top:2px;"><div style="height:100%; width:{{ score.components.spot_condition }}%; background:var(--status-ai);"></div></div>
+        </div>
+      </div>
+      <p class="text-sm text-muted" style="margin-top: 0.9rem; margin-bottom: 0;">
+        Score = 40% leaf vitality + 25% color health + 20% damage condition + 15% spot condition, each derived
+        directly from leaf measurements below. This score does not assess stems, roots, or the complete plant condition
+        and is not a scientifically validated agricultural diagnosis.
+      </p>
+    </div>
+  </div>
+
+  {% if ai_observed_concern %}
+  <div class="card" role="alert" style="margin-bottom:1.5rem;border-left:4px solid var(--status-warning);">
+    <strong>AI-OBSERVED CONCERN: {{ ai_observed_concern.kind }}</strong>
+    {% if ai_observed_concern.evidence %}<ul style="margin-bottom:.25rem;">{% for item in ai_observed_concern.evidence %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+    <p class="text-sm text-muted" style="margin:0;">This Gemini-observed concern is separate from the leaf-based OpenCV score and is not a confirmed diagnosis.</p>
+  </div>
+  {% endif %}
+
+  <div class="grid grid-cols-4" style="margin-bottom: 1.5rem;">
+    <div class="card"><div class="text-sm text-muted mt-0">Leaf Coverage</div><div style="font-size:1.5rem; font-weight:600;">{{ analysis.leaf_coverage if analysis.leaf_coverage is not none else '?' }}{% if analysis.leaf_coverage is not none %}%{% endif %}</div></div>
+    <div class="card"><div class="text-sm text-muted mt-0">Yellowing</div><div style="font-size:1.5rem; font-weight:600;">{{ analysis.yellowing if analysis.yellowing is not none else '?' }}{% if analysis.yellowing is not none %}%{% endif %}</div></div>
+    <div class="card"><div class="text-sm text-muted mt-0">Visible Damage</div><div style="font-size:1.5rem; font-weight:600;">{{ analysis.damage if analysis.damage is not none else '?' }}{% if analysis.damage is not none %}%{% endif %}</div></div>
+    <div class="card"><div class="text-sm text-muted mt-0">Dark Spots</div><div style="font-size:1.5rem; font-weight:600;">{{ analysis.dark_spots if analysis.dark_spots is not none else '?' }}{% if analysis.dark_spots is not none %}%{% endif %}</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-title">Original vs Processed vs Health Map</div>
+    <div class="grid grid-cols-3">
+      <div>
+        <img src="{{ url_for('main.media', category='images', filename=analysis.original_image) }}" alt="Original leaf image" style="border-radius: var(--radius-sm); width:100%;">
+        <p class="text-sm text-muted" style="text-align:center; margin-top:0.4rem;">Original</p>
+      </div>
+      {% if analysis.leaf_area_px %}
+      <div>
+        <img src="{{ url_for('main.media', category='processed', filename=analysis.processed_image) }}" alt="Segmented foliage" style="border-radius: var(--radius-sm); width:100%;">
+        <p class="text-sm text-muted" style="text-align:center; margin-top:0.4rem;">Processed (foliage segmentation)</p>
+      </div>
+      <div>
+        <img src="{{ url_for('main.media', category='processed', filename=analysis.overlay_image) }}" alt="Visual health map" style="border-radius: var(--radius-sm); width:100%;">
+        <p class="text-sm text-muted" style="text-align:center; margin-top:0.4rem;">Visual Health Map</p>
+      </div>
+      {% else %}<div class="empty-state" style="grid-column:span 2;padding:1rem;">OpenCV could not segment foliage in this image, so these measurements and the health score were not calculated. Gemini vision can still assess the uploaded image.</div>{% endif %}
+    </div>
+    <div class="row gap-md" style="margin-top: 1rem; flex-wrap: wrap; justify-content:center;">
+      <span class="row gap-sm text-sm"><span style="width:12px;height:12px;border-radius:3px;background:#47a746;display:inline-block;"></span>Healthy foliage</span>
+      <span class="row gap-sm text-sm"><span style="width:12px;height:12px;border-radius:3px;background:#ecc727;display:inline-block;"></span>Yellowing</span>
+      <span class="row gap-sm text-sm"><span style="width:12px;height:12px;border-radius:3px;background:#8e492e;display:inline-block;"></span>Visible damage</span>
+      <span class="row gap-sm text-sm"><span style="width:12px;height:12px;border-radius:3px;background:#8a4296;display:inline-block;"></span>Dark spots</span>
+    </div>
+  </div>
+
+  <section class="card" aria-labelledby="vision-assessment-title" style="margin-bottom:1.5rem;">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+      <div><div class="card-title" id="vision-assessment-title" style="margin-bottom:.25rem;">Vision-Based Plant Health Assessment</div>
+        <p class="text-sm text-muted" style="margin:0;">Gemini analyzes the uploaded image directly. Recorded plant details and OpenCV measurements provide context only.</p></div>
+      <span class="badge {{ 'badge-ai' if vision_assessment else 'badge-warning' }}">{{ 'GEMINI VISION SCREENING' if vision_assessment else 'VISION ASSESSMENT UNAVAILABLE' }}</span>
+    </div>
+    {% if vision_assessment %}
+      <p class="text-sm" style="margin-top:1rem;"><strong>Recorded plant:</strong> {{ analysis.plant.name }}{% if analysis.plant.species and analysis.plant.species|lower != analysis.plant.name|lower %} <span class="text-muted">({{ analysis.plant.species }} on record)</span>{% endif %}</p>
+      {% if vision_assessment.non_plant_image %}
+      <div role="status" style="margin-top:1rem;padding:.8rem 1rem;border:1px solid var(--status-warning);border-radius:var(--radius-sm);background:var(--status-warning-bg);">The image does not show a clearly identifiable plant. Upload a closer plant photo for a useful assessment.</div>
+      {% else %}
+      <div class="grid grid-cols-2" style="margin-top:1rem;gap:1rem;">
+        <div><div class="text-sm text-muted">Overall condition</div><strong>{{ vision_assessment.overall_condition|default('inconclusive')|capitalize }}</strong></div>
+      </div>
+      <div class="grid grid-cols-2" style="margin-top:1rem;gap:1rem;">
+        <div><h3>Observed symptoms</h3>{% if vision_assessment.observed_symptoms %}<ul>{% for item in vision_assessment.observed_symptoms %}<li>{{ item }}</li>{% endfor %}</ul>{% else %}<p class="text-sm text-muted">No distinct symptoms could be established from this image.</p>{% endif %}</div>
+        <div><h3>Plausible causes</h3>{% if vision_assessment.likely_causes %}<ul>{% for item in vision_assessment.likely_causes %}<li>{{ item }}</li>{% endfor %}</ul>{% else %}<p class="text-sm text-muted">No cause is inferred from the available evidence.</p>{% endif %}</div>
+      </div>
+      <h3>Visual assessment</h3><p>{{ vision_assessment.image_evidence }}</p>
+      {% if vision_assessment.identification_note %}<h3>Identification note</h3><p>{{ vision_assessment.identification_note }}</p>{% endif %}
+      <h3>Recommended care plan</h3>{% if vision_assessment.recommended_care %}<ol>{% for item in vision_assessment.recommended_care %}<li>{{ item }}</li>{% endfor %}</ol>{% else %}<p class="text-sm text-muted">No specific care plan can be supported from this image.</p>{% endif %}
+      <h3>Treatment precautions</h3><p>{{ vision_assessment.treatment_guidance|default('Inspect further before considering any disease-specific treatment.') }}</p>
+      <h3>Follow-up</h3><p>{{ vision_assessment.follow_up|default('Take a clear close-up image if symptoms continue or worsen.') }}</p>
+      <h3>Additional next steps</h3><ol>{% for item in vision_assessment.recommended_next_steps %}<li>{{ item }}</li>{% endfor %}</ol>
+      {% endif %}
+      <p class="text-sm text-muted"><strong>Uncertainty:</strong> {{ vision_assessment.uncertainty_notes }}</p>
+      <p class="text-sm text-muted" style="border-top:1px solid var(--surface-border);padding-top:.75rem;">AI-generated visual screening, not a confirmed diagnosis. Image observations and possible causes can be wrong; inspect the plant and seek local expert advice when symptoms worsen.</p>
+    {% else %}
+      <p role="status" class="text-sm" style="margin-top:1rem;">{{ vision_error or 'Vision analysis is not available for this result.' }} OpenCV measurements and basic-care guidance are still available.</p>
+    {% endif %}
+  </section>
+
+  <section class="card" aria-labelledby="care-assistant-title" style="margin-top:1.5rem;">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+      <div><div class="card-title" id="care-assistant-title" style="margin-bottom:.25rem;">AI Care Assistant</div>
+      <p class="text-sm text-muted" style="margin:0;">Guidance uses the saved vision assessment, recorded plant details, IVP measurements, and symptoms you report. It does not confirm a disease.</p></div>
+      {% if care_recommendation %}<span class="badge {{ 'badge-ai' if care_recommendation.provider == 'configured-ai' else 'badge-warning' }}">{{ 'AI-GENERATED' if care_recommendation.provider == 'configured-ai' else 'BASIC-CARE FALLBACK' }}</span>{% endif %}
+    </div>
+    {% if care_recommendation and care_recommendation.provider != 'configured-ai' %}
+      {% if care_error %}<div role="status" class="text-sm" style="margin-top:.8rem;padding:.75rem 1rem;border:1px solid var(--status-warning);border-radius:var(--radius-sm);background:var(--status-warning-bg);"><strong>AI provider diagnostic:</strong> {{ care_error }}</div>
+      {% else %}<p role="status" class="text-sm text-muted" style="margin-top:.8rem;">This saved recommendation used basic-care fallback. Its original provider failure reason was not stored; submit again to capture a current diagnostic.</p>{% endif %}
+    {% endif %}
+
+    {% if care_content %}
+    <div style="margin-top:1.1rem;">
+      <h3>Plant Condition Summary</h3><p>{{ care_content.condition_summary }}</p>
+      <h3>Possible Causes</h3><ul>{% for item in care_content.possible_causes %}<li>{{ item }}</li>{% endfor %}</ul>
+      <h3>Precautions</h3><ul>{% for item in care_content.precautions %}<li>{{ item }}</li>{% endfor %}</ul>
+      <h3>Step-by-Step Care Plan</h3><ol>{% for item in care_content.care_plan %}<li>{{ item }}</li>{% endfor %}</ol>
+      <h3>Treatment Guidance</h3><p>{{ care_content.treatment_guidance }}</p>
+      <h3>Follow-Up Monitoring</h3><p>{{ care_content.follow_up }}</p>
+      <p class="text-sm text-muted">Updated {{ care_recommendation.created_at.strftime('%B %d, %Y at %H:%M') }}.</p>
+    </div>
+    {% else %}<div class="empty-state" style="padding:1rem;"><p>Share symptoms and growing conditions to receive a tailored care plan. Until then, no cause is assumed.</p></div>{% endif %}
+
+    <form method="POST" action="{{ url_for('analysis.result', analysis_id=analysis.id) }}" style="margin-top:1.1rem;border-top:1px solid var(--surface-border);padding-top:1rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h3>Update symptoms and conditions</h3>
+      <p class="text-sm text-muted">Plant: <strong>{{ analysis.plant.name }}</strong> · {{ analysis.plant.species or 'Species not recorded' }}{% if analysis.plant.variety %} · {{ analysis.plant.variety }}{% endif %}</p>
+      <fieldset style="border:0;padding:0;margin:0 0 1rem;"><legend class="text-sm" style="font-weight:600;margin-bottom:.4rem;">Symptoms</legend>
+        {% for value, label in [('yellowing','Yellowing'),('brown_spots','Brown spots'),('curling','Curling'),('wilting','Wilting'),('holes','Holes'),('white_coating','White coating'),('stunted_growth','Stunted growth'),('other','Other')] %}
+        <label style="display:inline-flex;gap:.35rem;align-items:center;margin:0 .8rem .5rem 0;"><input type="checkbox" name="symptoms" value="{{ value }}" {% if value in care_symptoms.get('symptoms', []) %}checked{% endif %}> {{ label }}</label>
+        {% endfor %}
+      </fieldset>
+      <div class="grid grid-cols-2" style="gap:.8rem;">
+        <label class="form-group"><span class="text-sm">Affected area</span><select name="affected_area" class="form-control">{% for value,label in [('unknown','Unknown'),('older_leaves','Older leaves'),('new_leaves','New leaves'),('stems','Stems'),('fruit','Fruit'),('whole_plant','Whole plant')] %}<option value="{{ value }}" {% if care_symptoms.get('affected_area','unknown') == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label class="form-group"><span class="text-sm">Symptom duration</span><input class="form-control" name="duration" maxlength="80" value="{{ care_symptoms.get('duration','') }}" placeholder="e.g. about one week"></label>
+        <label class="form-group"><span class="text-sm">Watering frequency</span><input class="form-control" name="watering" maxlength="80" value="{{ care_symptoms.get('watering','') }}" placeholder="e.g. every 3 days"></label>
+        <label class="form-group"><span class="text-sm">Sunlight conditions</span><input class="form-control" name="sunlight" maxlength="80" value="{{ care_symptoms.get('sunlight','') }}" placeholder="e.g. morning sun"></label>
+      </div>
+      <label class="form-group"><span class="text-sm">Additional notes</span><textarea class="form-control" name="notes" maxlength="1000" rows="3" placeholder="Other symptoms or recent changes">{{ care_symptoms.get('notes','') }}</textarea></label>
+      <button type="submit" class="btn btn-primary">Generate care recommendations</button>
+    </form>
+  </section>
+{% endblock %}

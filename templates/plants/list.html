@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% set active_nav = 'plants' %}
+{% block title %}My Plants{% endblock %}
+{% block page_title %}My Plants{% endblock %}
+{% block breadcrumb %}Plant Management / My Plants{% endblock %}
+
+{% block content %}
+  <div class="row" style="justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+    <form method="get" class="topbar-search" style="width: 280px;">
+      {{ icon('search', 15) }}
+      <input type="search" name="q" value="{{ search }}" placeholder="Search by name or species…">
+    </form>
+    <div class="row gap-sm">
+      <a href="{{ url_for('plants.list_plants', archived='1' if not show_archived else None) }}" class="btn btn-secondary btn-sm">
+        {{ 'View Active' if show_archived else 'View Archived' }}
+      </a>
+      <a href="{{ url_for('plants.create_plant') }}" class="btn btn-primary">{{ icon('plus', 16) }} Add Plant</a>
+    </div>
+  </div>
+
+  {% if plants %}
+    <div class="grid grid-cols-3">
+      {% for plant in plants %}
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div style="height: 140px; background: var(--accent-soft); display:flex; align-items:center; justify-content:center; overflow:hidden;">
+            {% if plant.image_path %}
+              <img src="{{ url_for('main.media', category='plants', filename=plant.image_path) }}" alt="{{ plant.name }}" style="width:100%; height:100%; object-fit: cover;">
+            {% else %}
+              <span style="color: var(--accent); opacity: 0.6;">{{ icon('sprout', 36) }}</span>
+            {% endif %}
+          </div>
+          <div style="padding: 1.1rem 1.25rem 1.25rem;">
+            <div class="row" style="justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h3 style="margin-bottom: 0.15rem;">{{ plant.name }}</h3>
+                <p class="text-sm text-muted mt-0">{{ plant.species or 'Species not set' }}</p>
+              </div>
+              {% if plant.latest_analysis and plant.latest_analysis.health_score is not none %}
+                <span class="badge badge-good"><span class="badge-dot"></span>{{ plant.latest_analysis.health_score|round|int }}</span>
+              {% else %}
+                <span class="badge badge-neutral">No analysis</span>
+              {% endif %}
+            </div>
+            <div class="row gap-sm" style="margin-top: 0.9rem;">
+              <a href="{{ url_for('plants.view_plant', plant_id=plant.id) }}" class="btn btn-secondary btn-sm">View</a>
+              <a href="{{ url_for('plants.edit_plant', plant_id=plant.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+              <form method="POST" action="{{ url_for('plants.archive_plant', plant_id=plant.id) }}" style="margin-left:auto;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-ghost btn-sm">{{ 'Restore' if plant.is_archived else 'Archive' }}</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card empty-state">
+      <div class="empty-icon">{{ icon('sprout', 26) }}</div>
+      {% if search %}
+        <h3>No matches for "{{ search }}"</h3>
+        <p>Try a different name or species, or clear the search.</p>
+      {% elif show_archived %}
+        <h3>No archived plants</h3>
+        <p>Plants you archive will appear here.</p>
+      {% else %}
+        <h3>No plants yet</h3>
+        <p>Add your first plant to begin tracking its health and growth.</p>
+        <a href="{{ url_for('plants.create_plant') }}" class="btn btn-primary" style="margin-top: 0.75rem;">Add Plant</a>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}

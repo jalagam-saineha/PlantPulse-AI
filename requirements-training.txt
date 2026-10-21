@@ -1,0 +1,5 @@
+# Optional AI training/evaluation dependencies.
+# Install core requirements.txt and requirements-ai.txt first.
+matplotlib==3.9.2
+scikit-learn==1.5.2
+datasets==3.6.0

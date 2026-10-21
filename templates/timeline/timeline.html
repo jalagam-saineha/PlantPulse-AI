@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% set active_nav = 'timeline' %}
+{% block title %}Health Timeline{% endblock %}
+{% block page_title %}Health Timeline{% endblock %}
+{% block breadcrumb %}Workspace / Health Timeline{% endblock %}
+
+{% block content %}
+  <form method="get" class="card" style="margin-bottom: 1.5rem;">
+    <div class="grid grid-cols-4" style="gap: 0.75rem; align-items: end;">
+      <div class="field" style="margin:0;">
+        <label>Plant</label>
+        <select name="plant_id">
+          <option value="">All plants</option>
+          {% for p in plants %}<option value="{{ p.id }}" {{ 'selected' if filters.plant_id == p.id else '' }}>{{ p.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin:0;">
+        <label>Type</label>
+        <select name="type">
+          <option value="">All types</option>
+          <option value="analysis" {{ 'selected' if filters.type == 'analysis' else '' }}>Leaf Analysis</option>
+          <option value="video_frame" {{ 'selected' if filters.type == 'video_frame' else '' }}>Growth Frame</option>
+        </select>
+      </div>
+      <div class="field" style="margin:0;">
+        <label>Health</label>
+        <select name="health">
+          <option value="">Any</option>
+          <option value="good" {{ 'selected' if filters.health == 'good' else '' }}>Good (70+)</option>
+          <option value="fair" {{ 'selected' if filters.health == 'fair' else '' }}>Fair (50–69)</option>
+          <option value="poor" {{ 'selected' if filters.health == 'poor' else '' }}>Poor (&lt;50)</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Apply Filters</button>
+    </div>
+  </form>
+
+  {% if events %}
+    <div class="stack gap-md">
+      {% for item in events %}
+        <div class="card" style="display:flex; gap: 1rem; align-items: flex-start;">
+          <img src="{{ url_for('main.media', category=item.media_category, filename=item.event.image_path) }}" style="width:90px; height:90px; object-fit:cover; border-radius: var(--radius-sm); flex-shrink:0;" alt="">
+          <div style="flex:1;">
+            <div class="row" style="justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <strong>{{ item.plant.name if item.plant else 'Unknown plant' }}</strong>
+                <span class="badge badge-neutral" style="margin-left: 0.5rem;">{{ 'Leaf Analysis' if item.event.source_type == 'analysis' else 'Growth Frame' }}</span>
+              </div>
+              <span class="text-sm text-muted">{{ item.event.event_date.strftime('%b %d, %Y %H:%M') }}</span>
+            </div>
+            <div class="row gap-md" style="margin-top: 0.5rem; flex-wrap: wrap;">
+              <span class="text-sm">Health: <strong>{{ item.event.health_score|round|int if item.event.health_score is not none else '—' }}</strong></span>
+              <span class="text-sm">Yellowing: {{ item.event.yellowing }}%</span>
+              <span class="text-sm">Damage: {{ item.event.damage }}%</span>
+            </div>
+            {% if item.event.source_type == 'analysis' %}
+              <a href="{{ url_for('analysis.result', analysis_id=item.event.source_id) }}" class="text-sm">View full analysis →</a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card empty-state">
+      <div class="empty-icon">{{ icon('clock', 26) }}</div>
+      <h3>No timeline entries yet</h3>
+      <p>Run a Leaf Analysis or Growth Scan to start building your plant's health timeline.</p>
+    </div>
+  {% endif %}
+{% endblock %}

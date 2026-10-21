@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set active_nav = 'reports' %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block breadcrumb %}Workspace / Reports{% endblock %}
+
+{% block content %}
+  {% if reports %}
+    <div class="card" style="padding:0;">
+      {% for r in reports %}
+        <div class="row" style="justify-content: space-between; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--surface-border);">
+          <div class="row gap-md">
+            <span style="width:38px; height:38px; border-radius:9px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center;">{{ icon('file-text', 18) }}</span>
+            <div>
+              <strong>{{ r.title }}</strong>
+              <div class="text-sm text-muted">{{ r.created_at.strftime('%b %d, %Y %H:%M') }}</div>
+            </div>
+          </div>
+          <div class="row gap-sm">
+            <a href="{{ url_for('reports.view_report', report_id=r.id) }}" class="btn btn-secondary btn-sm" target="_blank">View</a>
+            <a href="{{ url_for('reports.download_report', report_id=r.id) }}" class="btn btn-secondary btn-sm">Download</a>
+            <form method="POST" action="{{ url_for('reports.delete_report', report_id=r.id) }}" onsubmit="return confirm('Delete this report?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-ghost btn-sm" style="color: var(--status-danger);">Delete</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card empty-state">
+      <div class="empty-icon">{{ icon('file-text', 26) }}</div>
+      <h3>No reports yet</h3>
+      <p>Generate a report after your first analysis from the Leaf Analysis result page.</p>
+    </div>
+  {% endif %}
+{% endblock %}

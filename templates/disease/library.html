@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% set active_nav = 'disease-library' %}
+{% block title %}Disease Library{% endblock %}
+{% block page_title %}Disease Library{% endblock %}
+{% block breadcrumb %}Intelligence / Disease Library{% endblock %}
+
+{% block content %}
+  {% if not model_installed %}
+    <div class="card empty-state" style="margin-bottom: 1.5rem;">
+      <div class="empty-icon">{{ icon('activity', 26) }}</div>
+      <h3>No AI model installed</h3>
+      <p>The Disease Library populates automatically from your installed model's <code>labels.json</code>. Install a model to see disease entries here.</p>
+    </div>
+  {% else %}
+    <form method="get" class="topbar-search" style="width: 320px; margin-bottom: 1.25rem;">
+      {{ icon('search', 15) }}
+      <input type="search" name="q" value="{{ search }}" placeholder="Search diseases…">
+    </form>
+
+    <div class="grid grid-cols-2">
+      {% for d in diseases %}
+        <div class="card">
+          <div class="row" style="justify-content: space-between;">
+            <h3 style="margin-bottom: 0.3rem;">{{ d.label }}</h3>
+            {% if d.has_info %}<span class="badge badge-good">Verified info</span>{% else %}<span class="badge badge-neutral">Unverified</span>{% endif %}
+          </div>
+          {% if d.species %}<p class="text-sm text-muted mt-0">{{ d.species }}</p>{% endif %}
+          {% if d.has_info %}
+            {% if d.symptoms %}<p class="text-sm"><strong>Symptoms:</strong> {{ d.symptoms }}</p>{% endif %}
+            {% if d.prevention %}<p class="text-sm"><strong>Prevention:</strong> {{ d.prevention }}</p>{% endif %}
+            {% if d.treatment %}<p class="text-sm"><strong>Treatment:</strong> {{ d.treatment }}</p>{% endif %}
+          {% else %}
+            <p class="text-sm text-muted">No verified information has been added for this disease yet.</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endblock %}

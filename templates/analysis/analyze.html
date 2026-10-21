@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% set active_nav = 'leaf-analysis' %}
+{% block title %}Leaf Analysis{% endblock %}
+{% block page_title %}Leaf Analysis{% endblock %}
+{% block breadcrumb %}Workspace / Leaf Analysis{% endblock %}
+
+{% block content %}
+<div class="content-narrow">
+  <div style="text-align:center; margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.8rem;">Read the leaf.</h1>
+    <p>Use computer vision to identify visible plant-health signals.</p>
+  </div>
+
+  <div class="card">
+    <form method="POST" enctype="multipart/form-data" id="analyze-form" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field">
+        <label for="plant_id">Plant</label>
+        <select id="plant_id" name="plant_id" required>
+          <option value="">Select a plant…</option>
+          {% for p in plants %}
+            <option value="{{ p.id }}" {{ 'selected' if p.id == selected_plant_id else '' }}>{{ p.name }}{% if p.species %} ({{ p.species }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Leaf image</label>
+        <div id="dropzone" style="border: 2px dashed var(--surface-border); border-radius: var(--radius-md); padding: 2rem; text-align: center; cursor: pointer; transition: border-color 150ms;">
+          <div id="dropzone-empty">
+            <div style="color: var(--accent); margin-bottom: 0.5rem;">{{ icon('upload-cloud', 30) }}</div>
+            <p style="margin:0;"><strong>Drag &amp; drop</strong> a leaf photo here, or click to browse</p>
+            <p class="text-sm text-muted">JPG, PNG or WEBP — up to 20 MB</p>
+          </div>
+          <div id="dropzone-preview" style="display:none;">
+            <img id="preview-img" src="" alt="Preview" style="max-height: 220px; border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
+            <div class="row gap-sm" style="justify-content:center;">
+              <button type="button" class="btn btn-secondary btn-sm" id="replace-btn">Replace image</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="remove-btn">Remove</button>
+            </div>
+          </div>
+        </div>
+        <input type="file" id="image" name="image" accept=".jpg,.jpeg,.png,.webp" required style="display:none;">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="submit-btn" style="margin-top: 0.5rem;">
+        Run Visual Analysis
+      </button>
+      <p class="text-sm text-muted" style="text-align:center; margin-top: 0.75rem;">
+        OpenCV measurements and Gemini image screening run when configured; the fixed-class model is only a secondary screening signal.
+      </p>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var dropzone = document.getElementById('dropzone');
+  var fileInput = document.getElementById('image');
+  var empty = document.getElementById('dropzone-empty');
+  var preview = document.getElementById('dropzone-preview');
+  var previewImg = document.getElementById('preview-img');
+  var form = document.getElementById('analyze-form');
+  var submitBtn = document.getElementById('submit-btn');
+
+  function showPreview(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      previewImg.src = e.target.result;
+      empty.style.display = 'none';
+      preview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  dropzone.addEventListener('click', function (e) {
+    if (e.target.id !== 'replace-btn' && e.target.id !== 'remove-btn') fileInput.click();
+  });
+  document.getElementById('replace-btn').addEventListener('click', function (e) {
+    e.stopPropagation(); fileInput.click();
+  });
+  document.getElementById('remove-btn').addEventListener('click', function (e) {
+    e.stopPropagation();
+    fileInput.value = '';
+    empty.style.display = 'block';
+    preview.style.display = 'none';
+  });
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files[0]) showPreview(fileInput.files[0]);
+  });
+
+  ['dragover', 'dragenter'].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      dropzone.style.borderColor = 'var(--accent)';
+    });
+  });
+  ['dragleave', 'drop'].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      dropzone.style.borderColor = 'var(--surface-border)';
+    });
+  });
+  dropzone.addEventListener('drop', function (e) {
+    if (e.dataTransfer.files[0]) {
+      fileInput.files = e.dataTransfer.files;
+      showPreview(e.dataTransfer.files[0]);
+    }
+  });
+
+  form.addEventListener('submit', function () {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Analyzing your leaf…';
+  });
+})();
+</script>
+{% endblock %}

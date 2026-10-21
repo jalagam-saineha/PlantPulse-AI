@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% set active_nav = 'insights' %}
+{% block title %}Health Insights{% endblock %}
+{% block page_title %}Health Insights{% endblock %}
+{% block breadcrumb %}Intelligence / Health Insights{% endblock %}
+
+{% block content %}
+  <p class="text-muted" style="margin-bottom: 1.25rem;">Generated from analyses in the last {{ window_days }} days. Only shown when your own data supports them — nothing here is fabricated.</p>
+
+  {% if insights %}
+    <div class="stack gap-sm">
+      {% for i in insights %}
+        <div class="card row" style="align-items:center; gap: 0.85rem;">
+          <span style="width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background: {{ 'var(--status-good-bg)' if i.positive else 'var(--status-warning-bg)' }}; color: {{ 'var(--status-good)' if i.positive else 'var(--status-warning)' }};">
+            {{ icon('bar-chart', 17) }}
+          </span>
+          <span>{{ i.text }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card empty-state">
+      <div class="empty-icon">{{ icon('bar-chart', 26) }}</div>
+      <h3>Not enough data yet</h3>
+      <p>Run at least two Leaf Analyses on the same plant within {{ window_days }} days to see trend insights here.</p>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% set active_nav = 'notifications' %}
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block breadcrumb %}System / Notifications{% endblock %}
+
+{% block content %}
+  {% if notifications %}
+    <div class="row" style="justify-content: flex-end; margin-bottom: 1rem;">
+      <form method="POST" action="{{ url_for('notifications.mark_all_read') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-secondary btn-sm">Mark all as read</button>
+      </form>
+    </div>
+    <div class="card" style="padding:0;">
+      {% for n in notifications %}
+        <div class="row" style="justify-content: space-between; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--surface-border); background: {{ 'transparent' if n.is_read else 'var(--accent-soft)' }};">
+          <div>
+            <strong>{{ n.title }}</strong>
+            <p class="text-sm text-muted mt-0">{{ n.message }}</p>
+            <span class="text-sm text-muted">{{ n.created_at.strftime('%b %d, %Y %H:%M') }}</span>
+          </div>
+          <div class="row gap-sm">
+            {% if n.link %}<a href="{{ n.link }}" class="btn btn-ghost btn-sm">View</a>{% endif %}
+            {% if not n.is_read %}
+              <form method="POST" action="{{ url_for('notifications.mark_read', notification_id=n.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-ghost btn-sm">Mark read</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card empty-state">
+      <div class="empty-icon">{{ icon('bell', 26) }}</div>
+      <h3>No notifications yet</h3>
+      <p>You'll see updates here when analyses complete, growth scans finish, or something needs your attention.</p>
+    </div>
+  {% endif %}
+{% endblock %}

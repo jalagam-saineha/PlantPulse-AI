@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% set active_nav = 'compare' %}
+{% block title %}Compare Analyses{% endblock %}
+{% block page_title %}Compare Analyses{% endblock %}
+{% block breadcrumb %}Intelligence / Compare Analyses{% endblock %}
+
+{% block content %}
+  <form method="get" class="card" style="margin-bottom: 1.5rem;">
+    <div class="grid grid-cols-3" style="gap: 0.75rem; align-items: end;">
+      <div class="field" style="margin:0;">
+        <label>Plant</label>
+        <select name="plant_id" onchange="this.form.submit()">
+          <option value="">Select a plant…</option>
+          {% for p in plants %}<option value="{{ p.id }}" {{ 'selected' if plant_id == p.id else '' }}>{{ p.name }}</option>{% endfor %}
+        </select>
+      </div>
+      {% if plant_analyses %}
+      <div class="field" style="margin:0;">
+        <label>Analysis A</label>
+        <select name="a">
+          {% for a in plant_analyses %}<option value="{{ a.id }}" {{ 'selected' if a.id == a_id else '' }}>{{ a.created_at.strftime('%b %d, %Y %H:%M') }} — {{ a.health_score|round|int if a.health_score is not none else '—' }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin:0;">
+        <label>Analysis B</label>
+        <select name="b">
+          {% for a in plant_analyses %}<option value="{{ a.id }}" {{ 'selected' if a.id == b_id else '' }}>{{ a.created_at.strftime('%b %d, %Y %H:%M') }} — {{ a.health_score|round|int if a.health_score is not none else '—' }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+    </div>
+    {% if plant_analyses %}<button type="submit" class="btn btn-primary" style="margin-top: 0.9rem;">Compare</button>{% endif %}
+  </form>
+
+  {% if plant_id and plant_analyses|length < 2 %}
+    <div class="card empty-state">
+      <div class="empty-icon">{{ icon('columns', 26) }}</div>
+      <h3>Not enough analyses yet</h3>
+      <p>This plant needs at least two Leaf Analyses before they can be compared.</p>
+    </div>
+  {% endif %}
+
+  {% if rows %}
+    <div class="grid grid-cols-2" style="margin-bottom: 1.5rem;">
+      <div class="card" style="text-align:center;">
+        <div class="text-sm text-muted">Before</div>
+        <img src="{{ url_for('main.media', category='images', filename=analysis_a.original_image) }}" style="width:100%; max-width:220px; border-radius: var(--radius-sm); margin: 0.5rem auto;">
+        <p class="text-sm mt-0">{{ analysis_a.created_at.strftime('%b %d, %Y %H:%M') }}</p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="text-sm text-muted">After</div>
+        <img src="{{ url_for('main.media', category='images', filename=analysis_b.original_image) }}" style="width:100%; max-width:220px; border-radius: var(--radius-sm); margin: 0.5rem auto;">
+        <p class="text-sm mt-0">{{ analysis_b.created_at.strftime('%b %d, %Y %H:%M') }}</p>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0;">
+      {% for row in rows %}
+        <div class="row" style="justify-content: space-between; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--surface-border);">
+          <span>{{ row.label }}</span>
+          <div class="row gap-md">
+            <span class="text-sm text-muted">{{ row.before }}{{ row.unit }} → {{ row.after }}{{ row.unit }}</span>
+            {% if row.delta is not none %}
+              <span class="badge {{ 'badge-good' if row.delta >= 0 else 'badge-danger' }}">
+                {{ '+' if row.delta >= 0 else '' }}{{ row.delta }}{{ row.unit }}
+                {% if row.pct_change is not none %}({{ '+' if row.pct_change >= 0 else '' }}{{ row.pct_change }}%){% endif %}
+              </span>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endblock %}
